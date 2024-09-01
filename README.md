@@ -22,20 +22,11 @@ make up
 cp .pgpass ~/.pgpass
 ```
 
-### Create table
+### Create table and load data all in one
 ```bash
-psql -h 127.0.0.1 -p 5432 -U postgres -d mimiciv -f mimic-iv/buildmimic/postgres/create.sql
+./scripts/load_mimiciv_data.sh
 ```
 
-### Load data
-```bash
-psql -h 127.0.0.1 -p 5432 -U postgres -d mimiciv -v ON_ERROR_STOP=1 -v mimic_data_dir=/home/ec2-user/raw_data/mimiciv/2.0 -f mimic-iv/buildmimic/postgres/load_gz.sql
-
-
-psql -h 127.0.0.1 -p 5432 -U postgres -d mimiciv -v ON_ERROR_STOP=1 -v mimic_data_dir=/home/ec2-user/raw_data/mimiciv/2.0 -f mimic-iv/buildmimic/postgres/constraint.sql
-
-psql -h 127.0.0.1 -p 5432 -U postgres -d mimiciv -v ON_ERROR_STOP=1 -v mimic_data_dir=/home/ec2-user/raw_data/mimiciv/2.0 -f mimic-iv/buildmimic/postgres/index.sql
-```
 
 ### attach tmux
 
