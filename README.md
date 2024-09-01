@@ -2,12 +2,24 @@
 
 # How to load data into your PgSQL?
 
+
+```bash
+tmux new -s mimic_iv
+
+```
+
 ```bash
 sudo apt install postgresql-client -y
 ```
 
 ```bash
 make up
+```
+
+### Password pass
+
+```bash
+cp .pgpass ~/.pgpass
 ```
 
 ### Create table
@@ -25,7 +37,17 @@ psql -h 127.0.0.1 -p 5432 -U postgres -d mimiciv -v ON_ERROR_STOP=1 -v mimic_dat
 psql -h 127.0.0.1 -p 5432 -U postgres -d mimiciv -v ON_ERROR_STOP=1 -v mimic_data_dir=/home/ec2-user/raw_data/mimiciv/2.0 -f mimic-iv/buildmimic/postgres/index.sql
 ```
 
+### attach tmux
 
+```bash
+tmux a -t mimic_iv
+```
+
+### exit
+
+```
+Control+b d
+```
 
 
 ## Navigating this repository
