@@ -1,12 +1,9 @@
 # Auto detect text files and perform LF normalization
 * text=auto
-
 # Ensure bashscripts don't have newlines
 *.sh eol=lf
-
 # Custom for Visual Studio
 *.cs     diff=csharp
-
 # Standard to msysgit
 *.doc	 diff=astextplain
 *.DOC	 diff=astextplain
@@ -18,3 +15,4 @@
 *.PDF	 diff=astextplain
 *.rtf	 diff=astextplain
 *.RTF	 diff=astextplain
+*.png filter=lfs diff=lfs merge=lfs -text
