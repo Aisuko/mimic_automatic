@@ -1,5 +1,3 @@
-
-
 # How to load data into your PgSQL?
 
 
@@ -7,6 +5,15 @@
 tmux new -s mimic_iv
 
 ```
+
+## Password pass(optional)
+
+```bash
+cp .pgpass ~/.pgpass
+```
+
+
+## Pgsql relate operations
 
 ```bash
 sudo apt install postgresql-client -y
@@ -16,17 +23,27 @@ sudo apt install postgresql-client -y
 make up
 ```
 
-### Password pass
-
-```bash
-cp .pgpass ~/.pgpass
-```
-
-### Create table and load data all in one
+## Create table and load data all in one for mimic-iv
 ```bash
 ./scripts/load_mimiciv_data.sh
 ```
 
+## mimic-iii
+```
+# under the path
+# mimic_automatic/mimic-iii/buildmimic/postgres
+
+make create-user mimic datadir="/home/ec2-user/workspace/mimic_iii/" DBNAME="mimic" DBPASS="p13240!" DBHOST="127.0.0.1"
+make create-user mimic-gz datadir="/home/ec2-user/workspace/mimic_iii/" DBNAME="mimic" DBPASS="p13240!" DBHOST="127.0.0.1"
+```
+
+## tmux operation
+
+### exit
+
+```
+Control+b d
+```
 
 ### attach tmux
 
@@ -34,11 +51,6 @@ cp .pgpass ~/.pgpass
 tmux a -t mimic_iv
 ```
 
-### exit
-
-```
-Control+b d
-```
 
 
 ## Navigating this repository
