@@ -2,21 +2,17 @@ import numpy as np
 import math
 from multiprocessing import Process, cpu_count
 import logging
-import psycopg2 as py
-
+import psycopg2
 
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
 
-np_data = np.load('list_adm_id.npy')
+np_data = np.load('get_list_of_hadm_id.npy')
 
 list_adm_id = np_data.tolist()
 
-# Function to split list into chunks
-def split_list(lst, n):
-    chunk_size = math.ceil(len(lst) / n)
-    return [lst[i:i + chunk_size] for i in range(0, len(lst), chunk_size)]
+
 
 # Dictionary of vitals with itemid sets
 vital_itemids = {
@@ -43,38 +39,61 @@ urine_output_itemids = [
 ]
 
 
+# Initialize connection pool
+
+# Function to split list into chunks
+def split_list(lst, n):
+    chunk_size = math.ceil(len(lst) / n)
+    return [lst[i:i + chunk_size] for i in range(0, len(lst), chunk_size)]
+
 # Function to process each chunk and save it as a .npy file
 def process_chunk(chunk, chunk_index):
+    try:
+        conn = psycopg2.connect(dbname='mimic', user='postgres', host='localhost', port='5432', password='p13240!')
+        cur = conn.cursor()
+        # Set the search path for this connection
+        cur.execute("SET search_path TO mimiciii;")
 
-    conn = py.connect("dbname = 'mimic' user = 'postgres' host = 'localhost' port='5432' password = 'p13240!'")
-    cur = conn.cursor()
-    cur.execute("SET search_path TO mimiciii;")
+        logging.info(f"Starting processing chunk {chunk_index} with {len(chunk)} admissions.")
 
-    logging.info(f"Starting processing chunk {chunk_index} with {len(chunk)} admissions.")
-    data = []
-    for id in range(len(chunk)):
-        hadm_id = chunk[id][0]
-        logging.info(f"Processing admission {id} in chunk {chunk_index}, hadm_id: {hadm_id}")
-        vitals = []
+        data = []
+        for id in range(len(chunk)):
+            hadm_id = chunk[id][0]
+            logging.info(f"Processing admission {id} in chunk {chunk_index}, hadm_id: {hadm_id}")
 
-        # Loop through the vital itemids and execute a single query per vital type
-        for vital_name, itemids in vital_itemids.items():
-            itemid_str = ','.join(map(str, itemids))
-            # Simulating the query execution
-            cur.execute(f"SELECT charttime, valuenum FROM chartevents WHERE hadm_id = {hadm_id} AND itemid IN ({itemid_str}) ORDER BY charttime")
+            vitals = []
+
+            # Loop through the vital itemids and execute a single query per vital type
+            for vital_name, itemids in vital_itemids.items():
+                itemid_str = ','.join(map(str, itemids))
+                # Simulating the query execution
+                cur.execute(f"SELECT charttime, valuenum FROM chartevents WHERE hadm_id = {hadm_id} AND itemid IN ({itemid_str}) ORDER BY charttime")
+                vitals.append(cur.fetchall())
+
+            # Fetch urine output from outputevents separately
+            urine_itemid_str = ','.join(map(str, urine_output_itemids))
+            cur.execute(f"SELECT charttime, VALUE FROM outputevents WHERE hadm_id = {hadm_id} AND itemid IN ({urine_itemid_str}) ORDER BY charttime")
             vitals.append(cur.fetchall())
 
-        # Fetch urine output from outputevents separately
-        urine_itemid_str = ','.join(map(str, urine_output_itemids))
-        cur.execute(f"SELECT charttime, VALUE FROM outputevents WHERE hadm_id = {hadm_id} AND itemid IN ({urine_itemid_str}) ORDER BY charttime")
-        vitals.append(cur.fetchall())
+            # Append the vitals for this admission ID to the main data list
+            data.append(vitals)
+        
+        # Commit the transaction to ensure changes are saved and prevent open transactions
+        conn.commit()
 
-        # Append the vitals for this admission ID to the main data list
-        data.append(vitals)
+        # Close cursor and connection properly
+        cur.close()
+        conn.close()
+    
+        # Save the chunk's data as a .npy file
+        np.save(f"chunk_{chunk_index}.npy", np.array(data))
+        logging.info(f"Chunk {chunk_index} saved with {len(chunk)} admissions.")
 
-    # Save the chunk's data as a .npy file
-    np.save(f"chunk_{chunk_index}.npy", np.array(data))
-    logging.info(f"Chunk {chunk_index} saved with {len(chunk)} admissions.")
+    except Exception as e:
+        logging.error(f"Error processing chunk {chunk_index}: {e}")
+    finally:
+        if conn is not None:
+            conn.close()
 
 # Split the list_adm_id into as many chunks as available CPU cores
 num_cores = cpu_count()  # Get number of CPU cores
