@@ -2,6 +2,7 @@ import numpy as np
 import math
 from multiprocessing import Process, cpu_count
 import logging
+import psycopg2 as py
 
 
 
@@ -44,6 +45,11 @@ urine_output_itemids = [
 
 # Function to process each chunk and save it as a .npy file
 def process_chunk(chunk, chunk_index):
+
+    conn = py.connect("dbname = 'mimic' user = 'postgres' host = 'localhost' port='5432' password = 'p13240!'")
+    cur = conn.cursor()
+    cur.execute("SET search_path TO mimiciii;")
+
     logging.info(f"Starting processing chunk {chunk_index} with {len(chunk)} admissions.")
     data = []
     for id in range(len(chunk)):
@@ -55,11 +61,13 @@ def process_chunk(chunk, chunk_index):
         for vital_name, itemids in vital_itemids.items():
             itemid_str = ','.join(map(str, itemids))
             # Simulating the query execution
-            vitals.append(f"SELECT charttime, valuenum FROM chartevents WHERE hadm_id = {hadm_id} AND itemid IN ({itemid_str}) ORDER BY charttime")
+            cur.execute(f"SELECT charttime, valuenum FROM chartevents WHERE hadm_id = {hadm_id} AND itemid IN ({itemid_str}) ORDER BY charttime")
+            vitals.append(cur.fetchall())
 
         # Fetch urine output from outputevents separately
         urine_itemid_str = ','.join(map(str, urine_output_itemids))
-        vitals.append(f"SELECT charttime, VALUE FROM outputevents WHERE hadm_id = {hadm_id} AND itemid IN ({urine_itemid_str}) ORDER BY charttime")
+        cur.execute(f"SELECT charttime, VALUE FROM outputevents WHERE hadm_id = {hadm_id} AND itemid IN ({urine_itemid_str}) ORDER BY charttime")
+        vitals.append(cur.fetchall())
 
         # Append the vitals for this admission ID to the main data list
         data.append(vitals)
