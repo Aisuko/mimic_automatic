@@ -51,6 +51,13 @@ Control+b d
 tmux a -t mimic_iv
 ```
 
+# Dump postgressql
+
+```
+pg_dump -U postgres -h localhost -p 5432 -d mimic -F d -j 15 -f mimic_iii.dump
+```
+
+
 
 
 ## Navigating this repository
